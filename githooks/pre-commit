@@ -1,0 +1,46 @@
+#!/bin/sh
+
+commit=true
+
+# Get a list of all the JS files being committed
+# If we wanted to be more clean, we could do a git stash of un-added files,
+# i.e. not being committed work (with a name that won’t overwrite any stashes
+# that may already exist) and pop it after running the hook.
+
+jsfiles=$(git diff --cached --name-only --diff-filter=ACM | grep "\.js$")
+if [ "$jsfiles" != "" ]; then 
+
+  # jshint validation
+  echo "\nRunning jshint validation..."
+  jshintpass=true
+  # Iterates through the committed files. So in this regard we only lint files that are being changed
+  # This was done in our case because we were introducing jshint piecemeal, in that we'd gradually get
+  # whole project linted eventually as we changed things. It might be beneficial to actually run it on
+  # the whole project after running through and getting it up to snuff.
+  for file in ${jsfiles}; do
+      result=$(jshint ${file})
+      if [ "$result" != "" ]; then
+          if $jshintpass; then
+            echo ""
+          fi
+          echo "\033[31m$result\033[0m"
+          jshintpass=false
+      fi
+  done
+  if ! $jshintpass; then
+    commit=false
+    jsfailure="Your commit contains files that fail jshint validation- fix the errors above and try again."
+  fi
+
+fi
+
+# Fail the commit if necessary
+if ! $commit; then
+  echo "\n\033[41mCOMMIT FAILED\033[0m"
+  if [ "$jsfailure" != "" ]; then
+    echo  "$jsfailure"
+  fi
+  echo
+  exit 1
+fi
+exit 0
