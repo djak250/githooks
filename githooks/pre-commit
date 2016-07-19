@@ -8,28 +8,29 @@ commit=true
 # that may already exist) and pop it after running the hook.
 
 jsfiles=$(git diff --cached --name-only --diff-filter=ACM | grep "\.js$")
-if [ "$jsfiles" != "" ]; then 
+echo $jsfiles
+if [ "$jsfiles" != "" ]; then
 
-  # jshint validation
-  echo "\nRunning jshint validation..."
-  jshintpass=true
+  # eslint validation
+  echo "\nRunning eslint validation..."
+  eslintpass=true
   # Iterates through the committed files. So in this regard we only lint files that are being changed
-  # This was done in our case because we were introducing jshint piecemeal, in that we'd gradually get
+  # This was done in our case because we were introducing eslint piecemeal, in that we'd gradually get
   # whole project linted eventually as we changed things. It might be beneficial to actually run it on
   # the whole project after running through and getting it up to snuff.
   for file in ${jsfiles}; do
-      result=$(jshint ${file})
+      result=$(eslint ${file})
       if [ "$result" != "" ]; then
-          if $jshintpass; then
+          if $eslintpass; then
             echo ""
           fi
           echo "\033[31m$result\033[0m"
-          jshintpass=false
+          eslintpass=false
       fi
   done
-  if ! $jshintpass; then
+  if ! $eslintpass; then
     commit=false
-    jsfailure="Your commit contains files that fail jshint validation- fix the errors above and try again."
+    jsfailure="Your commit contains files that fail eslint validation- fix the errors above and try again."
   fi
 
 fi
